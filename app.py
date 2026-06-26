@@ -91,6 +91,13 @@ def load_data(signature):
     matches  = pd.read_sql('SELECT * FROM "match" ORDER BY "finishedAt" DESC', conn)
     players  = pd.read_sql('SELECT * FROM "matchPlayer"', conn)
     ghosts   = pd.read_sql('SELECT * FROM "matchGhost"', conn)
+
+    try:
+        player_details = pd.read_sql('SELECT "id" AS "playerId", "player_name" FROM "playerDetails"', conn)
+        players = players.merge(player_details, on="playerId", how="left")
+    except Exception:
+        players["player_name"] = pd.NA
+
     return matches, players, ghosts
 
 # ── PLOTLY THEME ──────────────────────────────────────────────────────────────
@@ -244,11 +251,25 @@ with tab_matches:
 with tab_players:
     st.markdown("### Player performance")
 
-    player_ids = sorted(players["playerId"].dropna().unique().tolist())
+    player_ids = [pid for pid in players["playerId"].dropna().unique().tolist() if pd.notna(pid)]
+    player_labels = {}
+    for player_id in player_ids:
+        names = players.loc[players["playerId"] == player_id, "player_name"].dropna()
+        if not names.empty:
+            player_labels[player_id] = f"{names.iloc[0]} ({player_id})"
+        else:
+            player_labels[player_id] = str(player_id)
+
+    player_ids = sorted(player_ids, key=lambda pid: player_labels[pid].lower())
+
     if not player_ids:
         st.info("No player data for current filters.")
     else:
-        sel_player = st.selectbox("Select player", player_ids)
+        sel_player = st.selectbox(
+            "Select player",
+            options=player_ids,
+            format_func=lambda pid: player_labels.get(pid, str(pid)),
+        )
         pp = players[players["playerId"] == sel_player]
 
         c1,c2,c3,c4,c5 = st.columns(5)

@@ -265,12 +265,13 @@ with tab_players:
     if not player_ids:
         st.info("No player data for current filters.")
     else:
+        select_options = ["All players"] + player_ids
         sel_player = st.selectbox(
             "Select player",
-            options=player_ids,
-            format_func=lambda pid: player_labels.get(pid, str(pid)),
+            options=select_options,
+            format_func=lambda pid: "All players" if pid == "All players" else player_labels.get(pid, str(pid)),
         )
-        pp = players[players["playerId"] == sel_player]
+        pp = players if sel_player == "All players" else players[players["playerId"] == sel_player]
 
         c1,c2,c3,c4,c5 = st.columns(5)
         c1.metric("Games played", len(pp))

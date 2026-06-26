@@ -248,23 +248,7 @@ with tab_players:
     if not player_ids:
         st.info("No player data for current filters.")
     else:
-        name_col = next(
-            (col for col in ["player_name", "playerName", "name", "display_name", "username"] if col in players.columns),
-            None,
-        )
-        player_options = []
-        player_lookup = {}
-        for player_id in player_ids:
-            player_row = players[players["playerId"] == player_id].iloc[0] if not players[players["playerId"] == player_id].empty else None
-            if player_row is None:
-                continue
-            player_name = player_row[name_col] if name_col and not pd.isna(player_row[name_col]) else "Unknown"
-            label = f"{player_id} — {player_name}"
-            player_options.append(label)
-            player_lookup[label] = player_id
-
-        sel_player_label = st.selectbox("Select player", player_options)
-        sel_player = player_lookup[sel_player_label]
+        sel_player = st.selectbox("Select player", player_ids)
         pp = players[players["playerId"] == sel_player]
 
         c1,c2,c3,c4,c5 = st.columns(5)

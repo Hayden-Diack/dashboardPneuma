@@ -313,7 +313,7 @@ with tab_players:
             ghost_enc = ghost_values.value_counts().reset_index()
             ghost_enc.columns = ["Ghost", "Count"]
             fig2 = px.bar(ghost_enc.head(10), x="Count", y="Ghost", orientation='h',
-                          title="Ghost guesses", color_discrete_sequence=['#7c6af7'])
+                          title="Top 10 Most Common Ghost Guesses", color_discrete_sequence=['#7c6af7'])
             fig2.update_layout(**PLOT_LAYOUT, showlegend=False, yaxis={'categoryorder':'total ascending'})
             fig2.update_traces(marker_line_width=0, text=None, textposition='none')
             st.plotly_chart(fig2, use_container_width=True)

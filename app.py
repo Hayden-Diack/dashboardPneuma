@@ -305,7 +305,7 @@ with tab_players:
             fig2 = px.bar(ghost_enc.head(10), x="Count", y="Ghost", orientation='h',
                           title="Ghosts encountered", color_discrete_sequence=['#7c6af7'])
             fig2.update_layout(**PLOT_LAYOUT, showlegend=False, yaxis={'categoryorder':'total ascending'})
-            fig2.update_traces(marker_line_width=0)
+            fig2.update_traces(marker_line_width=0, text=None, textposition='none')
             st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown("#### Favourite camped rooms")

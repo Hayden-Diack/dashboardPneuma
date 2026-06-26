@@ -56,10 +56,26 @@ def get_conn():
         user=st.secrets["DB_USER"],
         password=st.secrets["DB_PASS"],
         sslmode="require",
+        connect_timeout=10,
     )
 
+
+def get_live_conn():
+    try:
+        conn = get_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        return conn
+    except (psycopg2.InterfaceError, psycopg2.OperationalError, psycopg2.DatabaseError):
+        get_conn.clear()
+        conn = get_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        return conn
+
+
 def get_db_signature():
-    conn = get_conn()
+    conn = get_live_conn()
     with conn.cursor() as curs:
         curs.execute('SELECT COUNT(*), COALESCE(MAX("finishedAt"), NULL) FROM "match"')
         match_count, match_latest = curs.fetchone()
@@ -71,7 +87,7 @@ def get_db_signature():
 
 @st.cache_data(ttl=300)
 def load_data(signature):
-    conn = get_conn()
+    conn = get_live_conn()
     matches  = pd.read_sql('SELECT * FROM "match" ORDER BY "finishedAt" DESC', conn)
     players  = pd.read_sql('SELECT * FROM "matchPlayer"', conn)
     ghosts   = pd.read_sql('SELECT * FROM "matchGhost"', conn)

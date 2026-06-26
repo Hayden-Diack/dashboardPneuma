@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Pneuma · Stats Dashboard",
-    page_icon="hiddenStuff/icon.png",
+    page_icon="img/icon.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )

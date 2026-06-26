@@ -300,7 +300,10 @@ with tab_players:
             st.plotly_chart(fig, use_container_width=True)
 
         with col_r:
-            ghost_enc = pp["ghostGuessed"].value_counts().reset_index()
+            ghost_values = pp["ghostGuessed"].dropna()
+            ghost_values = ghost_values.astype(str).str.strip()
+            ghost_values = ghost_values[ghost_values.ne("") & ~ghost_values.isin(["nan", "none", "null"])]
+            ghost_enc = ghost_values.value_counts().reset_index()
             ghost_enc.columns = ["Ghost", "Count"]
             fig2 = px.bar(ghost_enc.head(10), x="Count", y="Ghost", orientation='h',
                           title="Ghosts encountered", color_discrete_sequence=['#7c6af7'])

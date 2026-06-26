@@ -114,6 +114,13 @@ def fmt_sec(s):
     s = int(s or 0)
     return f"{s//60}m {s%60}s"
 
+
+def clean_label(value):
+    if pd.isna(value):
+        return "Unknown"
+    text = str(value).strip()
+    return text if text else "Unknown"
+
 # ── LOAD ──────────────────────────────────────────────────────────────────────
 try:
     signature = get_db_signature()
@@ -329,22 +336,42 @@ with tab_ghosts:
     if ghosts.empty:
         st.info("No ghost data for current filters.")
     else:
-        c1,c2,c3,c4 = st.columns(4)
-        c1.metric("Ghost encounters", len(ghosts))
-        c2.metric("Avg hunts", f"{ghosts['hunts'].mean():.1f}")
-        c3.metric("Avg possessions", f"{ghosts['possessions'].mean():.1f}")
-        c4.metric("Avg distance", int(ghosts["distanceTravelled"].mean() or 0))
+        ghosts_with_match = ghosts.copy()
+        if "matchId" in ghosts_with_match.columns and "id" in matches.columns:
+            ghosts_with_match = ghosts_with_match.merge(
+                matches[["id", "selectedMap"]].rename(columns={"id": "matchId"}),
+                on="matchId",
+                how="left",
+            )
+
+        ghosts_with_match["name"] = ghosts_with_match["name"].fillna("Unknown")
+        ghosts_with_match["selectedMap"] = ghosts_with_match["selectedMap"].fillna("Unknown")
+        ghosts_with_match["favouriteRoom"] = (
+            ghosts_with_match["favouriteRoom"].apply(clean_label)
+        )
+        ghosts_with_match["favouriteRoomChanges"] = (
+            pd.to_numeric(ghosts_with_match["favouriteRoomChanges"], errors="coerce").fillna(0).astype(int)
+        )
+        ghosts_with_match["mapInteractions"] = (
+            pd.to_numeric(ghosts_with_match["mapInteractions"], errors="coerce").fillna(0).astype(int)
+        )
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Ghost encounters", len(ghosts_with_match))
+        c2.metric("Fav room changes", int(ghosts_with_match["favouriteRoomChanges"].sum()))
+        c3.metric("Interaction count", int(ghosts_with_match["mapInteractions"].sum()))
+        c4.metric("Avg distance", int(ghosts_with_match["distanceTravelled"].mean() or 0))
 
         st.markdown("---")
         col_l, col_r = st.columns(2)
 
         with col_l:
-            ghost_stats = ghosts.groupby("name").agg(
-                appearances=("name","count"),
-                avg_hunts=("hunts","mean"),
-                avg_poss=("possessions","mean"),
-                avg_events=("ghostEvents","mean"),
-                avg_dist=("distanceTravelled","mean"),
+            ghost_stats = ghosts_with_match.groupby("name").agg(
+                appearances=("name", "count"),
+                avg_hunts=("hunts", "mean"),
+                avg_poss=("possessions", "mean"),
+                avg_events=("ghostEvents", "mean"),
+                avg_dist=("distanceTravelled", "mean"),
             ).reset_index().sort_values("appearances", ascending=False)
 
             fig = px.bar(ghost_stats.sort_values("avg_hunts"), x="avg_hunts", y="name",
@@ -362,14 +389,75 @@ with tab_ghosts:
             fig2.update_traces(textinfo="label+percent", textfont_color="white")
             st.plotly_chart(fig2, use_container_width=True)
 
+        st.markdown("#### Interaction and room insights")
+        interactions_by_ghost = (
+            ghosts_with_match.groupby("name", dropna=False)["mapInteractions"].sum().reset_index(name="Interactions")
+            .sort_values("Interactions", ascending=False)
+        )
+        interactions_by_room = (
+            ghosts_with_match.groupby("favouriteRoom", dropna=False)["mapInteractions"].sum().reset_index(name="Interactions")
+            .sort_values("Interactions", ascending=False)
+        )
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            fig3 = px.bar(interactions_by_ghost.head(12), x="Interactions", y="name", orientation='h',
+                          title="Interactions per ghost", color_discrete_sequence=['#3ecfb2'])
+            fig3.update_layout(**PLOT_LAYOUT, showlegend=False, yaxis={'categoryorder':'total ascending'})
+            fig3.update_traces(marker_line_width=0)
+            st.plotly_chart(fig3, use_container_width=True)
+
+        with col_b:
+            fig4 = px.bar(interactions_by_room.head(12), x="Interactions", y="favouriteRoom", orientation='h',
+                          title="Interactions per room", color_discrete_sequence=['#f0a84e'])
+            fig4.update_layout(**PLOT_LAYOUT, showlegend=False, yaxis={'categoryorder':'total ascending'})
+            fig4.update_traces(marker_line_width=0)
+            st.plotly_chart(fig4, use_container_width=True)
+
+        st.markdown("#### Favourite room breakdown")
+        fav_room_breakdown = (
+            ghosts_with_match.groupby(["name", "selectedMap", "favouriteRoom"], dropna=False)
+            .agg(
+                appearances=("id", "count"),
+                room_changes=("favouriteRoomChanges", "sum"),
+                interactions=("mapInteractions", "sum"),
+            )
+            .reset_index()
+            .sort_values(["appearances", "interactions"], ascending=False)
+        )
+
+        col_c, col_d = st.columns(2)
+        with col_c:
+            st.caption("By ghost")
+            st.dataframe(
+                fav_room_breakdown[["name", "favouriteRoom", "appearances", "room_changes", "interactions"]]
+                .rename(columns={"name": "Ghost", "favouriteRoom": "Favourite room", "appearances": "Appearances", "room_changes": "Room changes", "interactions": "Interactions"}),
+                use_container_width=True,
+                hide_index=True,
+                height=280,
+            )
+
+        with col_d:
+            st.caption("By map")
+            st.dataframe(
+                fav_room_breakdown[["selectedMap", "favouriteRoom", "appearances", "room_changes", "interactions"]]
+                .rename(columns={"selectedMap": "Map", "favouriteRoom": "Favourite room", "appearances": "Appearances", "room_changes": "Room changes", "interactions": "Interactions"}),
+                use_container_width=True,
+                hide_index=True,
+                height=280,
+            )
+
         st.markdown("#### Ghost stats breakdown")
         display_gs = ghost_stats.copy()
-        display_gs.columns = ["Ghost","Appearances","Avg hunts","Avg possessions","Avg events","Avg distance"]
+        display_gs.columns = ["Ghost", "Appearances", "Avg hunts", "Avg possessions", "Avg events", "Avg distance"]
         display_gs = display_gs.round(1)
 
-        # Fav room per ghost
-        fav_rooms = ghosts.groupby("name")["favouriteRoom"].agg(lambda x: x.mode()[0] if len(x) else "—").reset_index()
-        fav_rooms.columns = ["Ghost","Fav room"]
+        fav_rooms = (
+            ghosts_with_match.groupby("name")["favouriteRoom"]
+            .agg(lambda x: x.mode()[0] if len(x) else "—")
+            .reset_index()
+        )
+        fav_rooms.columns = ["Ghost", "Fav room"]
         display_gs = display_gs.merge(fav_rooms, on="Ghost", how="left")
 
         st.dataframe(display_gs, use_container_width=True, hide_index=True)

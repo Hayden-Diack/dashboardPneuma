@@ -28,4 +28,4 @@ The dashboard opens at **http://localhost:8501** automatically.
 - **Overview** — KPI cards, map distribution, end-phase bar chart, rolling win rate trend
 - **Match history** — Filterable table (win/loss, map, region)
 - **Players** — Per-player stats: survival, time zones, ghost encounters, favourite rooms
-- **Ghosts** — Avg hunts, possessions, appearance frequency, favourite rooms
+- **Ghosts** — Avg hunts, possessions, appearance frequency, favourite room changes, interaction counts, and room breakdowns by ghost and map

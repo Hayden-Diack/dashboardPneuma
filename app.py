@@ -501,7 +501,6 @@ with tab_ghosts:
             st.dataframe(
                 fav_room_breakdown[["name", "favouriteRoom", "appearances", "room_changes", "interactions"]]
                 .rename(columns={"name": "Ghost", "favouriteRoom": "Favourite room", "appearances": "Appearances", "room_changes": "Room changes", "interactions": "Interactions"}),
-                use_container_width=True,
                 hide_index=True,
                 height=280,
             )

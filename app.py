@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import psycopg2
 import pandas as pd
@@ -15,7 +16,13 @@ st.set_page_config(
 )
 
 # ── SECRETS & INITIALIZATION ──────────────────────────────────────────────────
-token = st.secrets["GITHUB_TOKEN"]
+try:
+    token = st.secrets["GITHUB_TOKEN"]
+except Exception:
+    token = os.getenv("GITHUB_TOKEN", "")
+
+if not token:
+    st.warning("GitHub token not configured. Set it in Streamlit secrets or as an environment variable.")
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""

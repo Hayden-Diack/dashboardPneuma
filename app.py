@@ -506,16 +506,6 @@ with tab_ghosts:
                 height=280,
             )
 
-        with col_d:
-            st.caption("By map")
-            st.dataframe(
-                fav_room_breakdown[["selectedMap", "favouriteRoom", "appearances", "room_changes", "interactions"]]
-                .rename(columns={"selectedMap": "Map", "favouriteRoom": "Favourite room", "appearances": "Appearances", "room_changes": "Room changes", "interactions": "Interactions"}),
-                use_container_width=True,
-                hide_index=True,
-                height=280,
-            )
-
         st.markdown("#### Ghost stats breakdown")
         display_gs = ghost_stats.copy()
         display_gs["Avg Match Length"] = display_gs["avg_match_length"].apply(fmt_sec)

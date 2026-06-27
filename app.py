@@ -165,7 +165,7 @@ with st.sidebar:
         get_db_signature.clear()
         load_data.clear()
         st.session_state.last_refresh = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.experimental_rerun()
+        st.rerun()
 
     st.caption(f"Data last refreshed: {st.session_state.last_refresh or 'Loading...'}")
     st.caption(f"{len(matches)} matches loaded")

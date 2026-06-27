@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import psycopg2
 import pandas as pd
@@ -14,18 +13,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# ── SECRETS & INITIALIZATION ──────────────────────────────────────────────────
-def get_secret(name, default=None):
-    try:
-        return st.secrets[name]
-    except Exception:
-        return os.getenv(name, default)
-
-
-token = get_secret("GITHUB_TOKEN", "")
-if not token:
-    st.warning("GitHub token not configured. Set it in Streamlit secrets or as an environment variable.")
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -65,10 +52,10 @@ st.markdown("""
 @st.cache_resource
 def get_conn():
     return psycopg2.connect(
-        host=get_secret("DB_HOST"),
-        database=get_secret("DB_NAME"),
-        user=get_secret("DB_USER"),
-        password=get_secret("DB_PASS"),
+        host=st.secrets["DB_HOST"],
+        database=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASS"],
         sslmode="require",
         connect_timeout=10,
     )

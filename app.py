@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Pneuma · Stats Dashboard",
@@ -12,6 +13,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ── SECRETS & INITIALIZATION ──────────────────────────────────────────────────
+token = st.secrets["GITHUB_TOKEN"]
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""

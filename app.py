@@ -150,7 +150,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    refresh_clicked = st.button("🔄 Refresh data")
+    refresh_clicked = st.button("🔄 Refresh data huanuana")
     if refresh_clicked:
         st.experimental_rerun()
 

@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from datetime import datetime
 
 
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ def get_live_conn():
         return conn
 
 
+@st.cache_data(ttl=60*60*24)
 def get_db_signature():
     conn = get_live_conn()
     with conn.cursor() as curs:
@@ -87,7 +89,7 @@ def get_db_signature():
         ghost_count = curs.fetchone()[0]
     return match_count, match_latest, player_count, ghost_count
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60*60*24)
 def load_data(signature):
     conn = get_live_conn()
     matches  = pd.read_sql('SELECT * FROM "match" ORDER BY "finishedAt" DESC', conn)
@@ -124,9 +126,14 @@ def clean_label(value):
     return text if text else "Unknown"
 
 # ── LOAD ──────────────────────────────────────────────────────────────────────
+if "last_refresh" not in st.session_state:
+    st.session_state.last_refresh = None
+
 try:
     signature = get_db_signature()
     matches, players, ghosts = load_data(signature)
+    if st.session_state.last_refresh is None:
+        st.session_state.last_refresh = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 except Exception as e:
     st.error(f"**Database connection failed:** {e}")
     st.stop()
@@ -154,8 +161,13 @@ with st.sidebar:
 
     refresh_clicked = st.button("🔄 Refresh data huanuana")
     if refresh_clicked:
+        get_conn.clear()
+        get_db_signature.clear()
+        load_data.clear()
+        st.session_state.last_refresh = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.experimental_rerun()
 
+    st.caption(f"Data last refreshed: {st.session_state.last_refresh or 'Loading...'}")
     st.caption(f"{len(matches)} matches loaded")
 
 # ── TABS ──────────────────────────────────────────────────────────────────────

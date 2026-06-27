@@ -414,6 +414,53 @@ with tab_ghosts:
             fig4.update_traces(marker_line_width=0)
             st.plotly_chart(fig4, use_container_width=True)
 
+        st.markdown("#### Player win rate by ghost favourite room")
+        ghost_room_outcomes = ghosts_with_match.merge(
+            matches[["id", "didWin"]].rename(columns={"id": "matchId"}),
+            on="matchId",
+            how="left",
+        )
+        ghost_room_winrate = (
+            ghost_room_outcomes.groupby(["name", "favouriteRoom"], dropna=False)
+            .agg(
+                matches=("matchId", "count"),
+                wins=("didWin", "sum"),
+                win_rate=("didWin", "mean"),
+            )
+            .reset_index()
+            .sort_values(["matches", "wins"], ascending=False)
+        )
+        ghost_room_winrate["win_rate_pct"] = (ghost_room_winrate["win_rate"] * 100).round(1)
+
+        ghost_names = ["All ghosts"] + sorted(ghost_room_winrate["name"].dropna().unique().tolist())
+        sel_ghost = st.selectbox("Ghost filter", ghost_names)
+        if sel_ghost != "All ghosts":
+            ghost_room_winrate = ghost_room_winrate[ghost_room_winrate["name"] == sel_ghost]
+
+        if ghost_room_winrate.empty:
+            st.info("No win-rate data available for the selected ghost.")
+        else:
+            fig5 = px.bar(
+                ghost_room_winrate,
+                x="favouriteRoom",
+                y="win_rate_pct",
+                color="name",
+                text="win_rate_pct",
+                title="Win rate by favourite room",
+                color_discrete_sequence=COLORS,
+            )
+            fig5.update_layout(**PLOT_LAYOUT, showlegend=True, xaxis_title="Favourite room", yaxis_title="Win rate %")
+            fig5.update_traces(marker_line_width=0)
+            st.plotly_chart(fig5, use_container_width=True)
+
+            st.dataframe(
+                ghost_room_winrate[["name", "favouriteRoom", "matches", "wins", "win_rate_pct"]].rename(
+                    columns={"name": "Ghost", "favouriteRoom": "Favourite room", "matches": "Matches", "wins": "Wins", "win_rate_pct": "Win rate %"}
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
+
         st.markdown("#### Favourite room breakdown")
         fav_room_breakdown = (
             ghosts_with_match.groupby(["name", "selectedMap", "favouriteRoom"], dropna=False)

@@ -368,8 +368,16 @@ with tab_ghosts:
         col_l, col_r = st.columns(2)
 
         with col_l:
-            ghost_stats = ghosts_with_match.groupby("name").agg(
+            # Merge match data to get game length
+            ghosts_match_length = ghosts_with_match.merge(
+                matches[["id", "gameLengthSeconds"]].rename(columns={"id": "matchId"}),
+                on="matchId",
+                how="left"
+            )
+            
+            ghost_stats = ghosts_match_length.groupby("name").agg(
                 appearances=("name", "count"),
+                avg_match_length=("gameLengthSeconds", "mean"),
                 avg_hunts=("hunts", "mean"),
                 avg_poss=("possessions", "mean"),
                 avg_events=("ghostEvents", "mean"),
@@ -498,8 +506,16 @@ with tab_ghosts:
 
         st.markdown("#### Ghost stats breakdown")
         display_gs = ghost_stats.copy()
-        display_gs.columns = ["Ghost", "Appearances", "Avg hunts", "Avg possessions", "Avg events", "Avg distance"]
-        display_gs = display_gs.round(1)
+        display_gs["Avg Match Length"] = display_gs["avg_match_length"].apply(fmt_sec)
+        display_gs = display_gs.rename(columns={
+            "name": "Ghost",
+            "appearances": "Appearances",
+            "avg_hunts": "Avg hunts",
+            "avg_poss": "Avg possessions",
+            "avg_events": "Avg events",
+            "avg_dist": "Avg distance"
+        })
+        display_gs = display_gs[["Ghost", "Appearances", "Avg Match Length", "Avg hunts", "Avg possessions", "Avg events", "Avg distance"]].round(1)
 
         fav_rooms = (
             ghosts_with_match.groupby("name")["favouriteRoom"]

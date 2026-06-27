@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import os
 
 
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
@@ -13,6 +14,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+token = st.secrets["GITHUB_TOKEN"]
+
+repo_url = f"https://{token}@github.com/Hayden-Diack/dashboardPneuma.git"
+
+os.system(f"git clone {repo_url}")
 
 # ── CUSTOM CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
